@@ -1,0 +1,10 @@
+{
+  "name": "claude-code-learn",
+  "version": "1.0.0",
+  "description": "Research topics and build a persistent knowledge base for Claude Code.",
+  "author": {
+    "name": "ourines"
+  },
+  "license": "MIT",
+  "keywords": ["learn", "knowledge", "research", "memory"]
+}
