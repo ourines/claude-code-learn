@@ -10,6 +10,18 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "WebSearch|WebFetch|mcp__context7__query-docs|mcp__gh_grep__searchGitHub",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PLUGIN_ROOT}/hooks/post-research.js",
+            "timeout": 3
+          }
+        ]
+      }
     ]
   }
 }
