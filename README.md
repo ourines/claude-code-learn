@@ -14,29 +14,27 @@ Persistent knowledge base for Claude Code. Research topics, save structured know
 
 ### From GitHub (Remote)
 
+**Step 1:** Add the marketplace in Claude Code:
+
+```
+/plugin marketplace add ourines/claude-code-learn
+```
+
+**Step 2:** Install the plugin:
+
+```
+/plugin
+```
+
+Navigate to **Discover** tab, find `claude-code-learn`, and enable it.
+
+Or install via CLI:
+
 ```bash
-claude install-plugin github:ourines/claude-code-learn
+claude plugin install claude-code-learn@ourines/claude-code-learn
 ```
 
-Or add to your `~/.claude/settings.json`:
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "claude-code-learn": {
-      "source": {
-        "source": "github",
-        "repo": "ourines/claude-code-learn"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "claude-code-learn@claude-code-learn": true
-  }
-}
-```
-
-Then create the knowledge directory:
+**Step 3:** Create the knowledge directory:
 
 ```bash
 mkdir -p ~/.claude/learnings

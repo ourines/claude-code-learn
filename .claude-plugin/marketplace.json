@@ -1,0 +1,8 @@
+{
+  "plugins": [
+    {
+      "name": "claude-code-learn",
+      "source": "."
+    }
+  ]
+}
