@@ -1,15 +1,52 @@
 # claude-code-learn
 
-A Claude Code plugin that lets you research topics and build a persistent, self-maintaining knowledge base.
+Persistent knowledge base for Claude Code. Research topics, save structured knowledge, and let Claude maintain it automatically.
 
 ## What It Does
 
-- `/learn <topic>` — Research a topic using all available tools (WebSearch, Context7, GitHub grep) and save structured knowledge to `~/.claude/learnings/`
-- `/recall <topic>` — Retrieve saved knowledge with fuzzy matching
-- `/forget <topic>` — Delete saved knowledge
-- **Auto-maintenance** — Claude silently updates stale or incorrect knowledge during normal work, without user intervention
+- **`/claude-code-learn:learn <topic>`** — Quick research using available tools, save to `~/.claude/learnings/`
+- **`/claude-code-learn:deep-learn <topic>`** — Deep research using parallel agents (subagents or team), comprehensive coverage
+- **`/claude-code-learn:recall <topic>`** — Load saved knowledge into session context (silent, no lecture)
+- **`/claude-code-learn:forget <topic>`** — Remove saved knowledge
+- **Auto-maintenance** — Claude silently updates stale or incorrect knowledge during normal work
 
 ## Installation
+
+### From GitHub (Remote)
+
+```bash
+claude install-plugin github:ourines/claude-code-learn
+```
+
+Or add to your `~/.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "claude-code-learn": {
+      "source": {
+        "source": "github",
+        "repo": "ourines/claude-code-learn"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "claude-code-learn@claude-code-learn": true
+  }
+}
+```
+
+Then create the knowledge directory:
+
+```bash
+mkdir -p ~/.claude/learnings
+```
+
+Restart Claude Code to activate.
+
+### Local Development
+
+Clone and install:
 
 ```bash
 git clone https://github.com/ourines/claude-code-learn.git
@@ -18,77 +55,94 @@ chmod +x install.sh
 ./install.sh
 ```
 
-Then restart Claude Code.
+Then start Claude Code with the plugin loaded:
+
+```bash
+claude --plugin-dir /path/to/claude-code-learn
+```
+
+`install.sh` does two things:
+1. Creates `~/.claude/learnings/` for knowledge storage
+2. Symlinks the plugin to `~/.claude/plugins/claude-code-learn`
 
 ### Manual Installation
 
-1. Symlink the plugin:
-   ```bash
-   ln -s /path/to/claude-code-learn ~/.claude/plugins/claude-code-learn
-   ```
+```bash
+# 1. Clone or download the repo
+git clone https://github.com/ourines/claude-code-learn.git
 
-2. Create the learnings directory:
-   ```bash
-   mkdir -p ~/.claude/learnings
-   ```
+# 2. Symlink to plugins directory
+ln -s /path/to/claude-code-learn ~/.claude/plugins/claude-code-learn
 
-3. Add the SessionStart hook to `~/.claude/settings.json`:
-   ```json
-   {
-     "hooks": {
-       "SessionStart": [
-         {
-           "hooks": [
-             {
-               "type": "command",
-               "command": "node ~/.claude/plugins/claude-code-learn/hooks/session-start.js",
-               "timeout": 5
-             }
-           ]
-         }
-       ]
-     }
-   }
-   ```
+# 3. Create knowledge directory
+mkdir -p ~/.claude/learnings
+
+# 4. Start with plugin flag
+claude --plugin-dir /path/to/claude-code-learn
+```
+
+Hooks and MCP servers are auto-configured when the plugin is active — no manual `settings.json` editing needed.
+
+## Skills
+
+### /claude-code-learn:learn
+
+Quick single-agent research. Adapts strategy based on topic type:
+
+| Topic Type | Primary Tools | Focus |
+|-----------|--------------|-------|
+| Library/Framework | Context7, GitHub grep, WebSearch | APIs, patterns, pitfalls, versions |
+| Concept/Pattern | WebSearch, WebFetch | Principles, tradeoffs, implementations |
+| Tool/CLI | WebSearch, WebFetch | Commands, config, recipes |
+| Language Feature | WebSearch, Context7 | Syntax, constraints, best practices |
+
+### /claude-code-learn:deep-learn
+
+Multi-agent deep research. Claude autonomously decides:
+
+- **How many agents** to spawn (2–5, based on topic breadth)
+- **Which strategy** to use:
+  - **Subagents** — independent parallel research, best for well-defined topics
+  - **Team agents** — coordinated research with shared task list, best for broad/unfamiliar topics where findings from one agent should influence others
+- **What dimensions** each agent covers (docs, code patterns, gotchas, ecosystem, etc.)
+
+Output includes an `Advanced Topics` section and `research_depth: "deep"` marker in frontmatter.
+
+### /claude-code-learn:recall
+
+Silently loads knowledge into session context. Does not recite the file — just confirms:
+
+> Loaded knowledge on "TanStack Router" (verified 2026-02-11, confidence: high).
+
+Shares details only when asked.
+
+### /claude-code-learn:forget
+
+Deletes knowledge file. If MCP memory is available, also cleans up the knowledge graph. If not, skips gracefully.
 
 ## How It Works
 
-### Research Strategy
-
-The `/learn` skill adapts its research based on the topic type:
-
-| Topic Type | Primary Tools | Focus Areas |
-|-----------|--------------|-------------|
-| Library/Framework | Context7 → GitHub grep → WebSearch | APIs, patterns, pitfalls, versions |
-| Concept/Pattern | WebSearch → WebFetch | Principles, tradeoffs, implementations |
-| Tool/CLI | WebSearch → WebFetch | Commands, config, recipes |
-| Language Feature | WebSearch → Context7 | Syntax, constraints, best practices |
-
 ### SessionStart Hook
 
-At the start of each session, the hook scans `~/.claude/learnings/` and outputs:
+At session start, the hook scans `~/.claude/learnings/` and outputs a compact summary:
 
 ```
-[Knowledge Base] 3 saved learning(s): TanStack Router, Go concurrency, Redis Streams.
+[claude-code-learn] 3 topic(s) in knowledge base: TanStack Router, Go concurrency, Redis Streams.
 Stale (>90d): Go concurrency.
-[Auto-maintenance] Read ~/.claude/learnings/<slug>.md when a topic is relevant...
+[Knowledge maintenance] When a topic above is relevant...
 ```
 
-This costs ~200 tokens. Claude reads full files only when a topic becomes relevant.
+~200 tokens. Claude reads full files only when relevant.
 
-### Self-Maintenance (Automatic)
+### Self-Maintenance
 
-This is the key feature: knowledge stays fresh without manual effort.
+- **Stale detection** — flags topics where `last_verified` > 90 days
+- **Silent updates** — when Claude finds outdated knowledge during work, it fixes the file automatically
+- **Organic growth** — Claude saves new knowledge it discovers during normal sessions
 
-- **Stale detection**: The hook flags topics where `last_verified` is >90 days old
-- **Silent updates**: When Claude uses saved knowledge and discovers it's outdated (API changed, pattern deprecated, etc.), it silently fixes the file — no confirmation dialog, no interruption
-- **Organic growth**: If Claude discovers valuable knowledge during normal work, it may save a new learning with a one-line notification
+### Knowledge Graph (Bundled)
 
-You never need to manually maintain your knowledge files. They evolve as you work.
-
-### Knowledge Graph Integration (Optional)
-
-If the `mcp__memory` MCP server is available, `/learn` also creates entities in the knowledge graph for semantic search. Entirely optional — the plugin works with just markdown files.
+The plugin bundles `@anthropic/mcp-memory` via `.mcp.json`. Auto-loaded when active — no separate configuration. No conflict if you already have the memory MCP server configured elsewhere.
 
 ## Knowledge File Format
 
@@ -112,35 +166,26 @@ last_verified: "2026-02-11"
 confidence: "high"
 tags: [tanstack, router, react, file-based-routing]
 sources_count: 4
+research_depth: "deep"        # only for /deep-learn output
+agents_used: 3                # only for /deep-learn output
+strategy: "subagents"         # only for /deep-learn output
 ---
 
 # TanStack Router
 
 ## TL;DR
-<2-4 sentence summary>
-
-## Core Concepts
-<Key concepts with code examples>
-
-## Practical Examples
-<Runnable code>
-
-## Gotchas & Pitfalls
-<Common mistakes and how to avoid them>
-
+## Core APIs / Concepts
+## Patterns & Recipes
+## Gotchas
+## Advanced Topics          # only for /deep-learn output
 ## Quick Reference
-<Cheat sheet>
-
-## References
-<Cited sources with URLs>
+## Sources
 ```
 
 ## Requirements
 
 - Claude Code CLI
-- Node.js (already required by Claude Code)
-- No other external dependencies
-- Works on macOS, Linux, and Windows
+- Node.js (required by Claude Code)
 
 ## License
 

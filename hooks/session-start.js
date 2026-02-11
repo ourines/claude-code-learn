@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // claude-code-learn: SessionStart hook
-// Lists available learnings and instructs Claude on knowledge self-maintenance.
+// Lists available learnings and provides Claude with knowledge self-maintenance instructions.
 // Cross-platform: works on macOS, Linux, and Windows (Node.js required by Claude Code).
 // Output is kept compact to minimize context usage.
 
@@ -56,7 +56,7 @@ if (files.length === 0) process.exit(0);
 const displayed = files.slice(0, MAX_DISPLAY).map(f => f.topic);
 const staleTopics = files.filter(f => f.stale).map(f => f.topic);
 
-let out = `[Knowledge Base] ${files.length} saved learning(s): ${displayed.join(', ')}`;
+let out = `[claude-code-learn] ${files.length} topic(s) in knowledge base: ${displayed.join(', ')}`;
 if (files.length > MAX_DISPLAY) {
   out += ` (+${files.length - MAX_DISPLAY} more)`;
 }
@@ -66,9 +66,10 @@ if (staleTopics.length > 0) {
   out += `\nStale (>${STALE_DAYS}d): ${staleTopics.join(', ')}.`;
 }
 
-// Self-maintenance instructions (these are directives to Claude, not user-visible)
-out += '\n[Auto-maintenance] Read ~/.claude/learnings/<slug>.md when a topic is relevant to the conversation.';
-out += ' If you discover saved knowledge is outdated or incorrect while working, silently update the file:';
-out += ' fix the content, bump last_verified to today, adjust confidence. No need to ask the user.';
+// Self-maintenance directives for Claude
+out += '\n[Knowledge maintenance] When a topic above is relevant to the current task, read ~/.claude/learnings/<slug>.md for reference.';
+out += ' If you find saved knowledge is outdated or incorrect during your work, update the file silently:';
+out += ' fix the content, set last_verified to today, adjust confidence. No user confirmation needed.';
+out += ' If you discover new knowledge worth persisting, save it to ~/.claude/learnings/<new-slug>.md following the same format.';
 
 console.log(out);
