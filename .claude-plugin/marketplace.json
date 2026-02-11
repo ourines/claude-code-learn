@@ -8,7 +8,7 @@
       "name": "claude-code-learn",
       "source": "./",
       "description": "Persistent knowledge base for Claude Code. Research, save, and auto-maintain structured knowledge.",
-      "version": "1.0.0",
+      "version": "0.1.0",
       "license": "MIT",
       "keywords": ["learn", "knowledge", "research", "memory"]
     }

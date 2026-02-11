@@ -1,6 +1,6 @@
 {
   "name": "claude-code-learn",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Research topics and build a persistent knowledge base for Claude Code.",
   "author": {
     "name": "ourines"
