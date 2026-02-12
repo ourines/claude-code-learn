@@ -8,6 +8,8 @@ Persistent knowledge base for Claude Code. Research topics, save structured know
 - **`/claude-code-learn:deep-learn <topic>`** — Deep research using parallel agents (subagents or team), comprehensive coverage
 - **`/claude-code-learn:recall <topic>`** — Load saved knowledge into session context (silent, no lecture)
 - **`/claude-code-learn:forget <topic>`** — Remove saved knowledge
+- **Auto-recall** — Detects project dependencies at session start, automatically loads matching knowledge
+- **Autonomous capture** — Claude proactively saves knowledge before context compaction and after substantial sessions
 - **Auto-maintenance** — Claude silently updates stale or incorrect knowledge during normal work
 
 ## Installation
@@ -128,9 +130,20 @@ At session start, the hook scans `~/.claude/learnings/` and outputs a compact su
 [claude-code-learn] 3 topic(s) in knowledge base: TanStack Router, Go concurrency, Redis Streams.
 Stale (>90d): Go concurrency.
 [Knowledge maintenance] When a topic above is relevant...
+[Auto-recall] Project dependencies match saved knowledge. READ now: ~/.claude/learnings/tanstack-router.md.
 ```
 
-~200 tokens. Claude reads full files only when relevant.
+The hook also detects project dependencies (`package.json`, `go.mod`, `requirements.txt`, `Cargo.toml`) and matches them against saved knowledge. When a match is found, Claude is instructed to load the relevant files immediately rather than waiting for the user to ask.
+
+### Autonomous Knowledge Capture
+
+Claude proactively saves knowledge without user intervention through two hooks:
+
+- **PreCompact hook** — When context is about to be compacted (details will be lost to summarization), Claude is prompted to persist any valuable discoveries from the session. This is the highest-signal trigger: long sessions that fill the context window are most likely to contain knowledge worth saving.
+
+- **Stop hook** — After substantial work sessions (transcript > 50KB), Claude is nudged to reflect on what it learned. Rate-limited to fire at most once per session to avoid noise.
+
+Combined with the existing PostToolUse hook (fires after research tool calls), this gives Claude three autonomous opportunities to capture knowledge during normal work — without requiring `/learn`.
 
 ### Self-Maintenance
 
